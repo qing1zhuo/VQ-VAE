@@ -6,6 +6,7 @@ import Model
 import copy
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
 
 # ============================================================================
 #                       ↓↓↓  图像 VQ-VAE 训练 / 验证  ↓↓↓
@@ -149,8 +150,8 @@ def train_prior(
         epoch_loss=0.0
         samples=0
         init_model.train()
-        
-        for x,y in train_loader:
+        pbar = tqdm(train_loader, desc=f"Epoch {epoch}/{epochs} [train]")
+        for x,y in pbar:
             x,y=x.to(device),y.to(device)
             scores=init_model(x,y)
             loss=criterion(scores,x)
@@ -158,23 +159,25 @@ def train_prior(
             loss.backward()
             optimizer.step()
 
-            epoch_loss+=loss*x.shape[0]
+            epoch_loss+=loss.item()*x.shape[0]
             samples+=x.shape[0]
+            # 更新进度条显示当前 loss
+            pbar.set_postfix({"loss": f"{loss.item():.4f}"})
 
-        epoch_loss=epoch_loss.item()/samples
+        epoch_loss=epoch_loss/samples
         train_loss_list.append(epoch_loss)
-        
+
         init_model.eval()
         val_loss, val_samples = 0.0, 0
         with torch.no_grad():
-            for x, y in valid_loader:
+            for x, y in tqdm(valid_loader, desc=f"Epoch {epoch}/{epochs} [valid]", leave=False):
                 x, y = x.to(device).long(), y.to(device).long()
                 scores = init_model(x, y)
                 loss = criterion(scores, x)
-                val_loss += loss * x.shape[0]
+                val_loss += loss.item() * x.shape[0]
                 val_samples += x.shape[0]
 
-        val_loss=val_loss.item()/val_samples
+        val_loss=val_loss/val_samples
         val_loss_list.append(val_loss)
 
         if epoch % print_epoc == 0:

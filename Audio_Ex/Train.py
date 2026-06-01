@@ -6,6 +6,7 @@ import Model
 import copy
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
 
 # ============================================================================
 #                       ↓↓↓  音频先验 WaveNet 训练  ↓↓↓
@@ -68,7 +69,8 @@ def train_audio_prior(
         samples = 0
         init_model.train()
 
-        for tokens, spk in train_loader:
+        pbar = tqdm(train_loader, desc=f"Epoch {epoch}/{epochs} [train]")
+        for tokens, spk in pbar:
             tokens = tokens.to(device, non_blocking=True)   # (B, T_lat)
             spk    = spk.to(device,    non_blocking=True)   # (B,)
 
@@ -83,6 +85,7 @@ def train_audio_prior(
             n = tokens.size(0)
             epoch_loss += loss.item() * n
             samples += n
+            pbar.set_postfix({"loss": f"{loss.item():.4f}"})
 
         epoch_loss /= samples
         train_loss_list.append(epoch_loss)
@@ -91,7 +94,7 @@ def train_audio_prior(
         init_model.eval()
         val_loss, val_samples = 0.0, 0
         with torch.no_grad():
-            for tokens, spk in valid_loader:
+            for tokens, spk in tqdm(valid_loader, desc=f"Epoch {epoch}/{epochs} [valid]", leave=False):
                 tokens = tokens.to(device, non_blocking=True)
                 spk    = spk.to(device,    non_blocking=True)
                 logits = init_model(tokens, spk)
@@ -140,7 +143,8 @@ def train_audio(
     epoch_total, epoch_recon, epoch_commit, epoch_perp = 0.0, 0.0, 0.0, 0.0
     samples = 0
 
-    for wf, mu, spk in train_loader:
+    pbar = tqdm(train_loader, desc=f"Epoch {epoch} [train]")
+    for wf, mu, spk in pbar:
         # 张量上 device
         wf  = wf.to(device,  non_blocking=True)   # (B, T) float
         mu  = mu.to(device,  non_blocking=True)   # (B, T) long
@@ -166,6 +170,7 @@ def train_audio(
         epoch_commit += commit_loss.item() * n
         epoch_perp   += perplexity.item()  * n
         samples += n
+        pbar.set_postfix({"loss": f"{loss.item():.4f}", "perp": f"{perplexity.item():.2f}"})
 
     # 求样本均值
     epoch_total  /= samples
@@ -187,7 +192,7 @@ def valid_audio(model, valid_loader, device, criterion):
     model.eval()
     model = model.to(device)
     total_recon, samples = 0.0, 0
-    for wf, mu, spk in valid_loader:
+    for wf, mu, spk in tqdm(valid_loader, desc="[valid]", leave=False):
         wf, mu, spk = wf.to(device), mu.to(device), spk.to(device)
         _, _, logits = model(wf, mu, spk)
         recon = criterion(logits, mu)

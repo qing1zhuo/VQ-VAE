@@ -32,8 +32,8 @@ class VectorQuantizerEMA(nn.Module):
 
         # 使用次数的滑动平均，注册为标量，不参与优化更新 (K,)
         self.register_buffer('_ema_cluster_size',torch.zeros(num_embeddings))
-        # 历史向量的滑动平均 (K,D)
-        self._ema_w = nn.Parameter(torch.Tensor(num_embeddings, self._embedding_dim))
+        # 历史向量的滑动平均 (K,D)，使用 buffer 避免被优化器追踪（EMA 手动更新）
+        self.register_buffer('_ema_w', torch.zeros(num_embeddings, self._embedding_dim))
         self._ema_w.data.normal_()
 
     def forward(self,img):
@@ -78,11 +78,11 @@ class VectorQuantizerEMA(nn.Module):
 
             # (K,D) 每个码本向量被分配到的latent向量进行元素级求和得到的东西
             dw=encodings.T@flat_img   
-            # 更新累加向量的移动平均 
-            self._ema_w=nn.Parameter(self._ema_w*self._decay+(1-self._decay)*dw)
+            # 更新累加向量的移动平均（detach 切断梯度，EMA 不参与反向传播）
+            self._ema_w=self._ema_w*self._decay+(1-self._decay)*dw.detach()
 
-            # 更新码本 (K,D)/(K,1)
-            self._embedding.weight=nn.Parameter(self._ema_w/self._ema_cluster_size.unsqueeze(1))
+            # 更新码本 (K,D)/(K,1) — 直接原地更新，不创建新 Parameter
+            self._embedding.weight.data.copy_(self._ema_w/self._ema_cluster_size.unsqueeze(1))
 
         # TODO 5: 计算承诺损失
         # 把quantized从计算图剥离，避免承诺损失梯度回传到码本
