@@ -117,5 +117,3 @@ class IndicesDataset(Dataset):
     def __getitem__(self, idx):
         # 直接返回一个indices样本，形状：(H, W)
         return self.indices[idx]
-
-

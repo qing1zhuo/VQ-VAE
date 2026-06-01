@@ -348,7 +348,7 @@ class GatedPixelCNN(nn.Module):
         with torch.no_grad():
             self.eval()
             param = next(self.parameters())
-            x = torch.zeros(
+            x = torch.ones(
                 (batch_size, *shape),
                 dtype=torch.int64, device=param.device
             )
