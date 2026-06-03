@@ -136,15 +136,25 @@ class ResidualStack(nn.Module):
 编码器encoder
 '''
 class Encoder(nn.Module):
-    def __init__(self,in_channels,hidden_channels,residual_channels,residual_layers):
+    def __init__(
+        self,in_channels,hidden_channels,residual_channels,residual_layers):
         super().__init__()
         # (in_c,32,32)->(hid_c//2,16,16)
-        self.conv1=nn.Conv2d(in_channels,hidden_channels//2,kernel_size=4,stride=2,padding=1)
+        self.conv1=nn.Conv2d(
+            in_channels,hidden_channels//2,
+            kernel_size=4,stride=2,padding=1
+            )
         # (hid_c//2,16,16)->(hid_c,8,8)
-        self.conv2=nn.Conv2d(hidden_channels//2,hidden_channels,kernel_size=4,stride=2,padding=1)
+        self.conv2=nn.Conv2d(
+            hidden_channels//2,hidden_channels,
+            kernel_size=4,stride=2,padding=1
+            )
         # (hid_c,8,8)->(hid_c,8,8)
         # 第三层卷积对特征做一个处理再去接relu
-        self.conv3=nn.Conv2d(hidden_channels,hidden_channels,kernel_size=3,stride=1,padding=1)  
+        self.conv3=nn.Conv2d(
+            hidden_channels,hidden_channels,
+            kernel_size=3,stride=1,padding=1
+            )  
         # (hid_c,8,8)->(hid_c,8,8)
         self.residual_stack=ResidualStack(hidden_channels,residual_channels,hidden_channels,residual_layers)
     def forward(self,x):
@@ -348,7 +358,7 @@ class GatedPixelCNN(nn.Module):
         with torch.no_grad():
             self.eval()
             param = next(self.parameters())
-            x = torch.ones(
+            x = torch.zeros(
                 (batch_size, *shape),
                 dtype=torch.int64, device=param.device
             )

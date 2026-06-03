@@ -11,15 +11,28 @@ from torch.utils.data import DataLoader,Dataset
 from PIL import Image
 import matplotlib.pyplot as plt
 
-# ===================================================================
-# 音频相关依赖
-# soundfile  : 读 wav/flac/ogg, 不依赖 TorchCodec / FFmpeg (torchaudio 2.11+ 的 load 需要它们)
-# torchaudio   : 重采样 (Resample) 与 μ-law 编解码 (functional)
-# ===================================================================
-import soundfile as sf
-import torchaudio
-import torchaudio.functional as AF
-import torchaudio.transforms as AT
+
+def get_MNIST(
+    train_bs=32,train_sf=False,
+    test_bs=32,test_sf=False
+):
+    transform=transforms.Compose([transforms.Resize(32),transforms.ToTensor()])
+    train_dataset=datasets.MNIST(
+        root=r"..\data",
+        train=True,
+        transform=transform,
+        download=True
+    )
+    test_dataset=datasets.MNIST(
+        root=r"..\data",
+        train=False,
+        transform=transform,
+        download=True
+    )
+    train_dataloader=DataLoader(train_dataset,batch_size=train_bs,shuffle=train_sf)
+    test_dataloader=DataLoader(test_dataset,batch_size=test_bs,shuffle=test_sf)
+    return train_dataloader,test_dataloader
+
 
 def get_CIFAR(bs):
     transform=transforms.Compose([
@@ -84,11 +97,20 @@ class MiniImageNetDataset(Dataset):
         return img,label
 
 
-def get_MiniImageNet(bs,image_size=84,num_workers=0):
-    transform=transforms.Compose([
-        transforms.Resize((image_size,image_size)),
+def get_MiniImageNet(bs,image_size=64,num_workers=0):
+    """返回 MiniImageNet 的 train/val/test DataLoader，训练集带数据增强"""
+    # --- 训练集：包含数据增强 ---
+    train_transform = transforms.Compose([
+        transforms.Resize((image_size, image_size)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+
+    # --- 验证 / 测试集：仅做基础预处理，不做增强 ---
+    eval_transform = transforms.Compose([
+        transforms.Resize((image_size, image_size)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
     data_root=r"..\data\miniImageNet--ravi"
@@ -97,9 +119,9 @@ def get_MiniImageNet(bs,image_size=84,num_workers=0):
     val_csv=os.path.join(data_root,"val.csv")
     test_csv=os.path.join(data_root,"test.csv")
 
-    train_dataset=MiniImageNetDataset(train_csv,images_dir,transform=transform)
-    val_dataset=MiniImageNetDataset(val_csv,images_dir,transform=transform)
-    test_dataset=MiniImageNetDataset(test_csv,images_dir,transform=transform)
+    train_dataset=MiniImageNetDataset(train_csv,images_dir,transform=train_transform)
+    val_dataset=MiniImageNetDataset(val_csv,images_dir,transform=eval_transform)
+    test_dataset=MiniImageNetDataset(test_csv,images_dir,transform=eval_transform)
 
     train_loader=DataLoader(train_dataset,bs,shuffle=True,num_workers=num_workers)
     val_loader=DataLoader(val_dataset,bs,num_workers=num_workers)

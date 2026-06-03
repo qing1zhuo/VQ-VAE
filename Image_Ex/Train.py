@@ -109,8 +109,9 @@ def valid(model,valid_loader,device,mean,std,idx):
     draw(original_image,recon_image,10,mean,std)
 
 def draw(x,recon_x,n,mean,std):
-    mean = torch.tensor(mean).view(1,3,1,1).to(x.device)
-    std = torch.tensor(std).view(1,3,1,1).to(x.device)
+    C = x.shape[1]  # 自动推断通道数（MNIST=1, CIFAR=3）
+    mean = torch.tensor(mean).view(1, C, 1, 1).to(x.device)
+    std = torch.tensor(std).view(1, C, 1, 1).to(x.device)
     
     n = min(x.shape[0],n)
     x_denorm = x * std + mean

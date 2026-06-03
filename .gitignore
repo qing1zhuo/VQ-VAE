@@ -24,6 +24,10 @@ data/**/*
 !data/**/*.csv
 !data/**/*.py
 
+# === PPT/Office 文件 ===
+*.pptx
+~$*.pptx
+
 # === Checkpoints：排除大型预编码缓存，保留模型权重 ===
 checkpoints/vqvae_indices_dataset.pt
 checkpoints/vqvae_audio_token_dataset.pt
