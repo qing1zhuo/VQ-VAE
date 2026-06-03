@@ -10,14 +10,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Architecture
 
-This is a two-modality VQ-VAE implementation (van den Oord et al., 2017) with autoregressive priors. The code is organized into parallel image and audio branches, each with independent Model/Train/GetData modules.
+This is a three-modality VQ-VAE implementation (van den Oord et al., 2017) with autoregressive priors. The code is organized into parallel image, audio, and video branches, each with independent Model/Train/GetData modules.
 
 ### Core design pattern
 
-Both modalities follow the same two-phase pipeline:
+All modalities follow the same two-phase pipeline:
 
 1. **Phase 1 — VQ-VAE training**: Encoder → Vector Quantization (EMA codebook) → Decoder → reconstruction loss
-2. **Phase 2 — Prior training**: Freeze VQ-VAE, encode all training samples to discrete indices, train an autoregressive prior (Gated PixelCNN for images, WaveNet1DPrior for audio) on those indices
+2. **Phase 2 — Prior training**: Freeze VQ-VAE, encode all training samples to discrete indices, train an autoregressive prior (Gated PixelCNN for images, WaveNet1DPrior for audio, action-conditioned Transformer for video) on those indices
 
 ### Shared component: `VectorQuantizerEMA`
 
@@ -31,6 +31,7 @@ Defined identically in both [Image_Ex/Model.py](Image_Ex/Model.py) and [Audio_Ex
 |----------|-------------------|------------|
 | Image    | `MSELoss(x_recon, x)` | `MSE + commit_loss` |
 | Audio    | `CrossEntropyLoss(logits, mu_law_target)` | `CE + commit_loss` |
+| Video    | `MSELoss(x_recon, x)` | `MSE + commit_loss` |
 
 Image data is normalized (mean/std per dataset), audio is μ-law encoded to 256 classes.
 
@@ -40,7 +41,7 @@ All `.pt` files in `checkpoints/` contain at minimum `model_state_dict` and `con
 
 ### Notebooks are the primary interface
 
-The `.ipynb` files in `Image_Ex/` and `Audio_Ex/` are the intended entry points — they import from `Model.py`, `Train.py`, `GetData.py` and orchestrate the full training/generation workflow. The `.py` files are library modules, not standalone scripts.
+The `.ipynb` files in `Image_Ex/`, `Audio_Ex/`, and `Video_Ex/` are the intended entry points — they import from `Model.py`, `Train.py`, `GetData.py` and orchestrate the full training/generation workflow. The `.py` files are library modules, not standalone scripts.
 
 ### Known quirks
 
@@ -49,6 +50,7 @@ The `.ipynb` files in `Image_Ex/` and `Audio_Ex/` are the intended entry points 
 - `src/` is empty; all code was migrated to `Image_Ex/` and `Audio_Ex/`
 - The CIFAR notebook filename spells "CIAFAR" — intentional historical typo, not a bug
 - Two different `vqvae_labels_dataset.pt` files exist (one for images, one for audio) in different runtime contexts but share the same filename — be careful when moving/copying
+- `Video_Ex/` is a work-in-progress: `GetData.py` is implemented (Atari DQN replay via torchrl), but `Model.py` and `Train.py` don't exist yet — notebooks contain interface specs as commented-out code
 
 ## Key hyperparameters
 
