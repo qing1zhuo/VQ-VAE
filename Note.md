@@ -113,8 +113,8 @@ INPUT_DIM=512
 DIM=128
 LAYERS=20
 N_CLASS=10
-INDICES_H = 32
-INDICES_W = 32
+INDICES_H = 8
+INDICES_W = 8
 - 数据预处理
 mean=[0.485, 0.456, 0.406]
 std=[0.229, 0.224, 0.225]
@@ -169,7 +169,7 @@ resize(128)
 mean=[0.485, 0.456, 0.406]
 std=[0.229, 0.224, 0.225]
 #### 训练损失
-![alt text](.\picture\MIN\vaeloss.png)
+![alt text](.\picture\MIN\vqvaeloss.png)
 最低总损失：0.065451
 ![alt text](.\picture\MIN\perplexity.png)
 最高码本利用率：339/512
@@ -204,8 +204,8 @@ INPUT_DIM=512
 DIM=128
 LAYERS=20
 N_CLASS=100
-INDICES_H = 16
-INDICES_W = 16
+INDICES_H = 32
+INDICES_W = 32
 - 数据预处理
 resize(128)
 mean=[0.485, 0.456, 0.406]
