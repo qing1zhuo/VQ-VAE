@@ -1,0 +1,1 @@
+$\frac{\partial L}{\partial z_e}=\frac{\partial L}{\partial z_q}$

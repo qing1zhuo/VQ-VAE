@@ -1,4 +1,3 @@
-from turtle import forward
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -32,7 +31,7 @@ class VectorQuantizerEMA(nn.Module):
 
         # 使用次数的滑动平均，注册为标量，不参与优化更新 (K,)
         self.register_buffer('_ema_cluster_size',torch.zeros(num_embeddings))
-        # 历史向量的滑动平均 (K,D)，使用 buffer 避免被优化器追踪（EMA 手动更新）
+        # 历史向量的滑动平均 (K,D)，注册为标量，不参与优化更新
         self.register_buffer('_ema_w', torch.zeros(num_embeddings, self._embedding_dim))
         self._ema_w.data.normal_()
 
@@ -44,7 +43,7 @@ class VectorQuantizerEMA(nn.Module):
         # 展平为(BHW,C)/(BHW,D)
         flat_img=img.view(-1,self._embedding_dim)
 
-        # TODO 2: 计算距离
+        # TODO 2: 计算距离, 得到形状为(BHW, K)的张量
         distances=(
             torch.sum(flat_img**2,dim=1,keepdim=True)
             +torch.sum(self._embedding.weight**2,dim=1)
@@ -52,8 +51,8 @@ class VectorQuantizerEMA(nn.Module):
         )
 
         # TODO 3: 计算索引和对应的隐向量
-        # 找索引
-        indices=torch.argmin(distances,dim=1).unsqueeze(1) # (N,1)
+        # 找索引, 形状为(BHW, 1)
+        indices=torch.argmin(distances,dim=1).unsqueeze(1)
 
         # 找对应的向量上，使用独热编码绕一圈，方便做使用率统计
         # 做一个独热矩阵(N,K)
@@ -62,7 +61,7 @@ class VectorQuantizerEMA(nn.Module):
         # 在列上按照index给出的索引写1
         encodings.scatter_(1,indices,1)
 
-        # 得到对应的向量(N,D)
+        # 得到对应的向量(BHW,D)
         quantized=encodings@self._embedding.weight
         # 形状变为(B,H,W,C)
         quantized=quantized.view(img_shape)

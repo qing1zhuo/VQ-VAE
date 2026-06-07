@@ -1,3 +1,0 @@
-import torch, torchaudio
-print(torch.__file__)       # 应在 D:\anaconda3\envs\dl\...
-print(torchaudio.__file__)
