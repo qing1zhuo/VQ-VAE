@@ -1,5 +1,6 @@
 # VQ-VAE + Autoregressive Priors：图像 · 音频 · 视频
 主要是AI写的，我懒得再做总结了，简单来说就是图像实验基本跑通，但是复杂数据集（Mini-ImageNet）的生图实验没搞定（码本Pixel-CNN训不出来）；音频、视频实验没那个资源训练
+
 基于 PyTorch 复现 **VQ-VAE**（Vector Quantized Variational Autoencoder，van den Oord et al., 2017）及其离散码本上的自回归先验模型，涵盖 **图像**、**音频** 与 **视频** 三个模态。
 
 | 模态 | 编码器 | 量化器 | 解码器 / 先验 | 数据集 |
